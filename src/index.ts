@@ -1,18 +1,26 @@
-import {Dealer} from "zeromq"
-
-import {Queue} from "./queue"
+import {Dealer} from "zeromq";
+import {SocketServer} from "./socketServer";
 
 async function main() {
-  const sender = new Dealer()
-  await sender.bind("tcp://127.0.0.1:5555")
+  new SocketServer(8383, 5000);
 
-  const queue = new Queue(sender)
-  queue.send("hello")
-  queue.send("world!")
-  queue.send(null)
+  const receiver = new Dealer();
+  receiver.connect("tcp://127.0.0.1:5555");
+  
+  console.log("Proxy connected to zeromq server at port 5555");
+  
+
+  for await (const [msg] of receiver) {
+    if (msg.length === 0) {
+      receiver.close();
+      console.log("received message from zeromq: <empty message>");
+    } else {
+      console.log(`received message from zeromq: ${msg}`);
+    }
+  }
 }
 
 main().catch(err => {
-  console.error(err)
-  process.exit(1)
+  console.error(err);
+  process.exit(1);
 })
