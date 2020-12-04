@@ -68,6 +68,10 @@ export class SocketServer {
           );
         });
       })
+      .on('connection', (request: http.IncomingMessage, socket: stream.Duplex) => {
+        console.log('--CLIENT WAS CONNECTED--');
+        console.dir(request, { showHidden: true, depth: 1, colors: true });
+      })
       .listen(this.port);
     console.log('server start on port: ', this.port);
   }
