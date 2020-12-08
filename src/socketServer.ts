@@ -2,6 +2,8 @@ import * as http from 'http';
 import * as stream from 'stream';
 import { createHash } from 'crypto';
 
+import {Dealer} from "zeromq";
+
 export class SocketServer {
   private HANDSHAKE_CONSTANT = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
   private MASK_LENGTH = 4; // Длина маски. Указана в спецификации
@@ -19,6 +21,7 @@ export class SocketServer {
     PING: Buffer.from([this.OPCODE.PING, 0x0]),
   };
   private connections: Set<stream.Duplex> = new Set();
+  private receiver = new Dealer();
   constructor(private port: number, heartbeatTimeout: number) {
     http
       .createServer()
@@ -68,9 +71,19 @@ export class SocketServer {
           );
         });
       })
-      .on('connection', (request: http.IncomingMessage, socket: stream.Duplex) => {
+      .on('connection', async (request: http.IncomingMessage, socket: stream.Duplex) => {
         console.log('--CLIENT WAS CONNECTED--');
-        console.dir(request, { showHidden: true, depth: 1, colors: true });
+        this.receiver.connect("tcp://127.0.0.1:5555");
+        console.log("Proxy connected to zeromq server at port 5555");
+
+        for await (const [msg] of this.receiver) {
+          if (msg.length === 0) {
+            this.receiver.close();
+            console.log("NO messages were received from zeromq server");
+          } else {
+            console.log(`received message from zeromq: ${msg}`);
+          }
+        }
       })
       .listen(this.port);
     console.log('server start on port: ', this.port);
