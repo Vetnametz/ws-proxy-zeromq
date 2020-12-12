@@ -1,7 +1,7 @@
-import {SocketServer} from "./socketServer";
+import { SocketServer } from "./socketServer";
 
 async function main() {
-  new SocketServer(8383, 5000);
+  new SocketServer(8383);
 }
 
 main().catch(err => {
